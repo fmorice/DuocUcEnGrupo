@@ -65,7 +65,7 @@ public class Biblioteca {
                 String[] partes = linea.split(",");
                 if (partes.length >=2) {
                     String rut = partes[0].trim();
-                    String nombre = nombre = partes[1].trim();
+                    String nombre = partes[1].trim();
                     mapaUsuarios.put(rut, new Usuario(rut, nombre));
                 }
             }
@@ -98,9 +98,9 @@ public class Biblioteca {
         //Buscar libro 
         boolean libroEncontrado = false;
         for (Libro libro : listaLibros){
-            if (libro.getTitulo().trim().toLowerCase().contains(tituloBuscado)) {
+            if (libro.getTitulo().trim().toLowerCase().equals(tituloBuscado)) {
                 libroEncontrado = true;
-                if (libro.estaPrestado()) {
+                if(libro.estaPrestado()) {
                     throw new LibroYaPrestadoException("El libro '"+libro.getTitulo()+"' ya esta prestado"); 
                 }
                 libro.prestar();
@@ -108,8 +108,8 @@ public class Biblioteca {
                 return;
             }
         }    
-        if (!libroEncontrado) {
-           throw new LibroYaPrestadoException("El libro '"+titulo+"' no existe en la biblioteca.");     
+        if (!libroEncontrado){
+        throw new LibroNoEncontradoException("El libro '"+titulo+"' no existe en la biblioteca.");     
         }
     }
     // Mostrar todos los libros
