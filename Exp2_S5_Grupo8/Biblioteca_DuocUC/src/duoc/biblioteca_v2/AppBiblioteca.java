@@ -43,6 +43,7 @@ public class AppBiblioteca {
                                 break;
                             }
                         }
+                        biblioteca.mostrarLibrosDisponibles();
                         System.out.print("Ingrese título del libro: ");
                         String titulo = scanner.nextLine();
                         try {
@@ -52,6 +53,7 @@ public class AppBiblioteca {
                             System.out.println("Error: "+e.getMessage());
                         }
                         break;
+
                     case 3:
                         biblioteca.guardarInforme("informe.txt");
                         System.out.println("Informe guardado.");
