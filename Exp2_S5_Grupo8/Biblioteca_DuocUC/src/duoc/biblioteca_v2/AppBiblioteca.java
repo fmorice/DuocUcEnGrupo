@@ -9,6 +9,7 @@ public class AppBiblioteca {
     public static void main(String[] args) {
         Biblioteca biblioteca = new Biblioteca();
         biblioteca.cargarLibrosDesdeCSV("libros.csv"); // debe estar en la raíz del proyecto
+        biblioteca.guardarUsuariosEnCSV("usuarios.csv");
         Scanner scanner = new Scanner(System.in);
 
         int opcion = 0;
