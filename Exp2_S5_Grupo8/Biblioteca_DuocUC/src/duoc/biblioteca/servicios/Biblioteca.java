@@ -56,7 +56,8 @@ public class Biblioteca {
             System.out.println("Error al leer el archivo: " + e.getMessage());
         }
     }
-    
+
+    // Registrar un nuevo usuario
     public void cargarUsuariosDesdeCSV(String ruta) {
         try (BufferedReader lector = new BufferedReader(new FileReader(ruta))){
             String linea;
@@ -81,8 +82,7 @@ public class Biblioteca {
             System.out.println("Error al guardar usuario: "+ e.getMessage());
         }
     }
-
-    //El registro del usuario quedara al solicitar el prestamo de un libro
+    
     public void prestarLibroConRegistro(String rut, String nombre, String titulo) throws LibroNoEncontradoException, LibroYaPrestadoException {
         //Verificacion si usuario ya esta registrado (por el uso de HashMap)
         if (!mapaUsuarios.containsKey((rut))) {
@@ -90,16 +90,22 @@ public class Biblioteca {
             mapaUsuarios.put(rut, nuevoUsuario);
             System.out.println("Nuevo usuario registrado: "+ nombre);
         }
+        if (titulo == null || titulo.trim().isEmpty()){
+            throw new LibroNoEncontradoException("Debe ingresar un titulo valido");
+        }
+        String tituloBuscado = titulo.trim().toLowerCase(); //Normaliza el titulo
         
+        //Buscar libro 
         boolean libroEncontrado = false;
         for (Libro libro : listaLibros){
-            if (libro.getTitulo().equalsIgnoreCase(titulo)) {
+            if (libro.getTitulo().trim().toLowerCase().contains(tituloBuscado)) {
                 libroEncontrado = true;
                 if (libro.estaPrestado()) {
-                    throw new LibroYaPrestadoException("El libro '"+titulo+"' ya esta prestado"); 
+                    throw new LibroYaPrestadoException("El libro '"+libro.getTitulo()+"' ya esta prestado"); 
                 }
                 libro.prestar();
-                System.out.println("Libro prestado con exito a "+ nombre);
+                System.out.println("Libro '"+libro.getTitulo()+"' prestado con exito a "+ (mapaUsuarios.containsKey(rut)?mapaUsuarios.get(rut).getNombre() : nombre));
+                return;
             }
         }    
         if (!libroEncontrado) {
@@ -139,5 +145,8 @@ public class Biblioteca {
     }
     public Collection<Usuario> getUsuarioRegistrados(){
         return Collections.unmodifiableCollection(mapaUsuarios.values());
+    }
+    public boolean existeUsuario(String rut){
+        return mapaUsuarios.containsKey(rut);
     }
 }    
