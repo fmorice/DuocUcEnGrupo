@@ -10,19 +10,18 @@ import duoc.biblioteca.modelos.Usuario;
 import duoc.biblioteca.excepciones.*;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 
 public class Biblioteca {
     
     // Paso 3: Uso de ‘ArrayList’ para libro, colecciones como atributos de la clase
     private ArrayList<Libro> listaLibros = new ArrayList<>();
+    // Paso 4: HashMap para usuarios (clave:RUT)
     private HashMap<String, Usuario> mapaUsuarios = new HashMap<>();
+    // Paso 5: HashSet para titulos unicos
     private HashSet<String> titulosUnicos = new HashSet<>();
-    private HashSet<String> rutsUnicos = new HashSet<>();
-
-    private ArrayList<Libro> libros = new ArrayList<>();
-    private HashMap<String, Usuario> usuarios = new HashMap<>();
+    // Paso 5: TreeSet para catalogo ordenado de libros por titulo
+    private TreeSet<Libro> catalogoOrdenado = new TreeSet<>(Comparator.comparing(Libro::getTitulo));
     
       // método agregarLibro con HashSet
     public void agregarLibro(Libro libro) {
@@ -34,16 +33,6 @@ public class Biblioteca {
         }
     }
 
-     // Método para registrar usuario usando HashMap y HashSet
-    public void registrarUsuario(Usuario usuario) {
-        String rut = usuario.getRut();
-        if (rutsUnicos.add(rut)) {
-            mapaUsuarios.put(rut, usuario);
-            System.out.println("✅ Usuario registrado: " + usuario.getNombre());
-        } else {
-            System.out.println("⚠️ El usuario ya está registrado.");
-        }
-    }
     // Leer libros desde un archivo CSV
     public void cargarLibrosDesdeCSV(String ruta) {
         try {
@@ -55,55 +44,109 @@ public class Biblioteca {
                 if (partes.length >= 2) {
                     String titulo = partes[0].trim();
                     String autor = partes[1].trim();
-                    libros.add(new Libro(titulo, autor));
+                    Libro libro = new Libro(titulo, autor);
+                    
+                    if(titulosUnicos.add(titulo)){
+                        listaLibros.add(libro);
+                        catalogoOrdenado.add(libro);
+                    }
                 }
             }
-
-            lector.close();
         } catch (IOException e) {
             System.out.println("Error al leer el archivo: " + e.getMessage());
         }
     }
 
     // Registrar un nuevo usuario
-    public void registrarUsuario(String rut, String nombre) {
-        usuarios.put(rut, new Usuario(rut, nombre));
-    }
-
-    // Prestar un libro por título
-    public void prestarLibro(String titulo) throws LibroNoEncontradoException, LibroYaPrestadoException {
-        for (Libro libro : libros) {
-            if (libro.getTitulo().equalsIgnoreCase(titulo)) {
-                if (libro.estaPrestado()) {
-                    throw new LibroYaPrestadoException("El libro ya fue prestado.");
-                } else {
-                    libro.prestar();
-                    return;
+    public void cargarUsuariosDesdeCSV(String ruta) {
+        try (BufferedReader lector = new BufferedReader(new FileReader(ruta))){
+            String linea;
+            while((linea = lector.readLine()) != null){
+                String[] partes = linea.split(",");
+                if (partes.length >=2) {
+                    String rut = partes[0].trim();
+                    String nombre = partes[1].trim();
+                    mapaUsuarios.put(rut, new Usuario(rut, nombre));
                 }
             }
+        }catch (IOException e){
+            System.out.println("Error al cargar usuarios: "+e.getMessage());
         }
-        throw new LibroNoEncontradoException("El libro no fue encontrado.");
+    }    
+    public void guardarUsuariosEnCSV(String ruta){
+        try (PrintWriter escritor = new PrintWriter(new FileWriter(ruta))){
+            for(Usuario usuario : mapaUsuarios.values()){
+                escritor.println(usuario.getRut()+","+ usuario.getNombre());
+            }
+        }catch(IOException e){
+            System.out.println("Error al guardar usuario: "+ e.getMessage());
+        }
     }
-
+    
+    public void prestarLibroConRegistro(String rut, String nombre, String titulo) throws LibroNoEncontradoException, LibroYaPrestadoException {
+        //Verificacion si usuario ya esta registrado (por el uso de HashMap)
+        if (!mapaUsuarios.containsKey((rut))) {
+            Usuario nuevoUsuario = new Usuario (rut, nombre);
+            mapaUsuarios.put(rut, nuevoUsuario);
+            System.out.println("Nuevo usuario registrado: "+ nombre);
+        }
+        if (titulo == null || titulo.trim().isEmpty()){
+            throw new LibroNoEncontradoException("Debe ingresar un titulo valido");
+        }
+        String tituloBuscado = titulo.trim().toLowerCase(); //Normaliza el titulo
+        
+        //Buscar libro 
+        boolean libroEncontrado = false;
+        for (Libro libro : listaLibros){
+            if (libro.getTitulo().trim().toLowerCase().equals(tituloBuscado)) {
+                libroEncontrado = true;
+                if(libro.estaPrestado()) {
+                    throw new LibroYaPrestadoException("El libro '"+libro.getTitulo()+"' ya esta prestado"); 
+                }
+                libro.prestar();
+                System.out.println("Libro '"+libro.getTitulo()+"' prestado con exito a "+ (mapaUsuarios.containsKey(rut)?mapaUsuarios.get(rut).getNombre() : nombre));
+                return;
+            }
+        }    
+        if (!libroEncontrado){
+        throw new LibroNoEncontradoException("El libro '"+titulo+"' no existe en la biblioteca.");     
+        }
+    }
     // Mostrar todos los libros
-    public void mostrarLibros() {
-        for (Libro libro : libros) {
+    public void mostrarLibrosDisponibles() {
+        System.out.println("\n::::::: LIBROS DISPONIBLES :::::::");
+        for (Libro libro : catalogoOrdenado) {
+            if (!libro.estaPrestado()) {
             System.out.println(libro);
+            }
         }
     }
 
     // Guardar un informe de los libros a un archivo de texto
     public void guardarInforme(String ruta) {
-        try {
-            FileWriter escritor = new FileWriter(ruta);
-
-            for (Libro libro : libros) {
-                escritor.write(libro.toString() + "\n");
+        try (PrintWriter escritor = new PrintWriter(new FileWriter(ruta))) {
+            escritor.println("::::::: INFORME DE BIBLIOTECA :::::::");
+            escritor.println("Total libros: "+ listaLibros.size());
+            escritor.println("Total usuarios: "+ mapaUsuarios.size());
+            escritor.println("\n::::::: LIBROS :::::::");
+            for (Libro libro : catalogoOrdenado) {
+                escritor.println(libro);
             }
-
-            escritor.close();
+            escritor.println("\n::::::: USUARIOS REGISTRADOS :::::::");
+            for (Usuario usuario : mapaUsuarios.values()) {
+                escritor.println(usuario);
+            }
         } catch (IOException e) {
             System.out.println("Error al guardar el informe: " + e.getMessage());
         }
     }
-}
+    public Set<Libro> getCatalogoOrdenado(){
+        return Collections.unmodifiableSet(catalogoOrdenado);
+    }
+    public Collection<Usuario> getUsuarioRegistrados(){
+        return Collections.unmodifiableCollection(mapaUsuarios.values());
+    }
+    public boolean existeUsuario(String rut){
+        return mapaUsuarios.containsKey(rut);
+    }
+}    
