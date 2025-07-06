@@ -14,10 +14,10 @@ public class PrimeCheckerThread extends Thread {
         if (lista.isPrime(numero)) {
             synchronized (lista) {
                 lista.add(numero);
-                System.out.println("✅ " + numero + " es primo (hilo: " + getName() + ")");
+                System.out.println("âœ… " + numero + " es primo (hilo: " + getName() + ")");
             }
         } else {
-            System.out.println("❌ " + numero + " no es primo (hilo: " + getName() + ")");
+            System.out.println("âŒ " + numero + " no es primo (hilo: " + getName() + ")");
         }
     }
 }
