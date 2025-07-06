@@ -1,6 +1,6 @@
 package com.mycompany.primesecure;
-
 import java.util.ArrayList;
+import java.util.Collection;
 
 public class PrimesList extends ArrayList<Integer> {
 
@@ -21,15 +21,27 @@ public class PrimesList extends ArrayList<Integer> {
         if (!isPrime(numero)) {
             throw new IllegalArgumentException("❌ El número " + numero + " no es primo.");
         }
+        if(this.contains(numero)){
+            System.out.println("El numero "+numero+" ya esta en la lista");
+            return false;
+        }
         return super.add(numero);
     }
 
     @Override
     public boolean remove(Object numero) {
+        if(numero instanceof Integer integer){
+            if(!isPrime(integer)){
+                throw new IllegalArgumentException("Solo puedes eliminar numero primos");
+            }
+        }
         return super.remove(numero);
     }
 
     public int getPrimesCount() {
         return this.size();
+    }
+    public Collection<Integer> getPrimes(){
+        return this;
     }
 }
